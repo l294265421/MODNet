@@ -10,14 +10,21 @@ import torch.nn.functional as F
 import torchvision.transforms as transforms
 
 from src.models.modnet import MODNet
-
+from common import common_path
 
 if __name__ == '__main__':
     # define cmd arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input-path', type=str, help='path of input images')
-    parser.add_argument('--output-path', type=str, help='path of output images')
-    parser.add_argument('--ckpt-path', type=str, help='path of pre-trained MODNet')
+    parser.add_argument('--input-path', type=str,
+                        default=os.path.join(common_path.project_dir, 'demo/image_matting/colab/input'),
+                        help='path of input images')
+    parser.add_argument('--output-path', type=str,
+                        default=os.path.join(common_path.project_dir, 'demo/image_matting/colab/output'),
+                        help='path of output images')
+    parser.add_argument('--ckpt-path', type=str,
+                        default=os.path.join(common_path.project_dir,
+                                             'pretrained/modnet_photographic_portrait_matting.ckpt'),
+                        help='path of pre-trained MODNet')
     args = parser.parse_args()
 
     # check input arguments
@@ -44,8 +51,10 @@ if __name__ == '__main__':
 
     # create MODNet and load the pre-trained ckpt
     modnet = MODNet(backbone_pretrained=False)
-    modnet = nn.DataParallel(modnet).cuda()
-    modnet.load_state_dict(torch.load(args.ckpt_path))
+    # cpu
+    # modnet = nn.DataParallel(modnet).cuda()
+    modnet = nn.DataParallel(modnet)
+    modnet.load_state_dict(torch.load(args.ckpt_path, map_location=torch.device('cpu')))
     modnet.eval()
 
     # inference images
@@ -90,7 +99,9 @@ if __name__ == '__main__':
         im = F.interpolate(im, size=(im_rh, im_rw), mode='area')
 
         # inference
-        _, _, matte = modnet(im.cuda(), True)
+        # cpu
+        # _, _, matte = modnet(im.cuda(), True)
+        _, _, matte = modnet(im, True)
 
         # resize and save matte
         matte = F.interpolate(matte, size=(im_h, im_w), mode='area')
