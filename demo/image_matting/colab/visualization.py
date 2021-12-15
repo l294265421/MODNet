@@ -34,7 +34,9 @@ def combined_display(image, matte):
 
     # combine image, foreground, and alpha into one line
     combined = np.concatenate((image, foreground, matte * 255), axis=1)
-    combined = Image.fromarray(np.uint8(combined)).resize((rw, rh))
+    # clearer images
+    # combined = Image.fromarray(np.uint8(combined)).resize((rw, rh))
+    combined = Image.fromarray(np.uint8(combined))
     return combined
 
 
